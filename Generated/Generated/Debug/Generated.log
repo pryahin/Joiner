@@ -1,0 +1,5 @@
+﻿  stdafx.cpp
+  Generated.cpp
+c:\users\pryah\documents\visual studio 2015\projects\generated\generated\generated.cpp(35): warning C4800: BOOL: принудительно задано логическое значение "true" или "false" (предупреждение о производительности)
+  Generated.vcxproj -> c:\users\pryah\documents\visual studio 2015\Projects\Generated\Debug\Generated.exe
+  Generated.vcxproj -> c:\users\pryah\documents\visual studio 2015\Projects\Generated\Debug\Generated.pdb (Full PDB)
