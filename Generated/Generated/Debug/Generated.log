@@ -1,6 +1,4 @@
-﻿  stdafx.cpp
+﻿  Пропуск... (изменения не обнаружены)
   Generated.cpp
-c:\users\pryah\documents\visual studio 2015\projects\generated\generated\generated.cpp(41): warning C4800: BOOL: принудительно задано логическое значение "true" или "false" (предупреждение о производительности)
-c:\users\pryah\documents\visual studio 2015\projects\generated\generated\generated.cpp(43): warning C4101: e: неиспользованная локальная переменная
   Generated.vcxproj -> C:\Users\pryah\Documents\Visual Studio 2015\Projects\Generated\Debug\Generated.exe
   Generated.vcxproj -> C:\Users\pryah\Documents\Visual Studio 2015\Projects\Generated\Debug\Generated.pdb (Full PDB)

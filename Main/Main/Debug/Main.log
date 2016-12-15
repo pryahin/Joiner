@@ -1,0 +1,12 @@
+﻿  MyForm.cpp
+c:\users\pryah\documents\visual studio 2015\projects\main\main\MyForm.h(555): warning C4800: BOOL: принудительно задано логическое значение "true" или "false" (предупреждение о производительности)
+c:\users\pryah\documents\visual studio 2015\projects\main\main\MyForm.h(560): warning C4800: BOOL: принудительно задано логическое значение "true" или "false" (предупреждение о производительности)
+c:\users\pryah\documents\visual studio 2015\projects\main\main\MyForm.h(565): warning C4800: BOOL: принудительно задано логическое значение "true" или "false" (предупреждение о производительности)
+c:\users\pryah\documents\visual studio 2015\projects\main\main\MyForm.h(583): warning C4800: BOOL: принудительно задано логическое значение "true" или "false" (предупреждение о производительности)
+c:\users\pryah\documents\visual studio 2015\projects\main\main\MyForm.h(782): warning C4101: size1: неиспользованная локальная переменная
+c:\users\pryah\documents\visual studio 2015\projects\main\main\MyForm.h(781): warning C4101: hFile: неиспользованная локальная переменная
+c:\users\pryah\documents\visual studio 2015\projects\main\main\MyForm.h(782): warning C4101: size2: неиспользованная локальная переменная
+c:\users\pryah\documents\visual studio 2015\projects\main\main\MyForm.h(782): warning C4101: dwBytesRead: неиспользованная локальная переменная
+c:\users\pryah\documents\visual studio 2015\projects\main\main\myform.h(758): warning C4715: main::MyForm::ChangeExeIcon: значение возвращается не при всех путях выполнения
+  Main.vcxproj -> C:\Users\pryah\Documents\Visual Studio 2015\Projects\Main\Debug\main.exe
+  Main.vcxproj -> C:\Users\pryah\Documents\Visual Studio 2015\Projects\Main\Debug\main.pdb (Full PDB)

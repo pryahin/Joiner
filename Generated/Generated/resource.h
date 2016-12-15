@@ -3,8 +3,10 @@
 // Used by Generated.rc
 //
 
+#define IDI_ICON				108
 #define IDS_FIRSTFILE			1001
 #define IDS_FILE2				1002
+#define IDS_SETTINGS			2000
 
 // Следующие стандартные значения для новых объектов
 //

