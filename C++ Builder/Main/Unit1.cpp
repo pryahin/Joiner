@@ -1,8 +1,10 @@
 //---------------------------------------------------------------------------
-
+#pragma library("vclx.lib")
 #include <vcl.h>
 #include <vector>
 #include <string>
+#include <FileCtrl.hpp>
+
 #pragma hdrstop
 
 #include "Unit1.h"
@@ -295,6 +297,9 @@ if (Edit1->Text == "" || Edit2->Text == "")
 		{
 			ShowMessage("Выберите файлы!");
 		}
+		else if (Edit5->Text == "") {
+               ShowMessage("Выберите путь!");  
+			 }
 		else
 		{
 			if (extract(1001)) //, Edit1->Text + ".exe")) {
@@ -347,7 +352,8 @@ if (Edit1->Text == "" || Edit2->Text == "")
 					}
 					buffer1.clear();
 				}
-				MoveFile(L"output.exe",(ExtractFilePath(Application->ExeName)+"output.exe").c_str());
+				MoveFile(L"output.exe",(Edit5->Text+"\\output.exe").c_str());
+                ShowMessage("Готово!");
 			}
 			else
 			{
@@ -402,23 +408,24 @@ void __fastcall TForm1::CheckBox4Click(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TForm1::PageControl1Change(TObject *Sender)
 {
-   if (PageControl1->Height == 182) {
+   if (PageControl1->TabIndex == 1) {
 		PageControl1->Height = 278;
-		Height = 326;
+		Height = 305;
 	}
 	else
 	{
-		PageControl1->Height = 182;
-		Height = 230;
+		PageControl1->Height = 190;
+		Height = 218;
 	}
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::FormCreate(TObject *Sender)
 {
 	PageControl1->TabIndex = 0;
-	Width = 452;
-	Height = 230;
-	PageControl1->Height = 182;
+	Width = 436;
+	Height = 218;
+	PageControl1->Height = 190;
+    Edit5->Text = ExtractFilePath(Application->ExeName);
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm1::Button4Click(TObject *Sender)
@@ -438,6 +445,13 @@ icon->Handle = box;
 Image1->Picture->Icon->Assign(icon);
 
 OpenDialog2->FileName = "";
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::Button6Click(TObject *Sender)
+{
+String Dir;
+  if (SelectDirectory(Dir, TSelectDirOpts() << sdAllowCreate << sdPerformCreate << sdPrompt,0))
+	Edit5->Text = Dir;
 }
 //---------------------------------------------------------------------------
 

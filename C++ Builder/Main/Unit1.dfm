@@ -4,8 +4,8 @@ object Form1: TForm1
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = #1044#1078#1086#1081#1085#1077#1088
-  ClientHeight = 290
-  ClientWidth = 446
+  ClientHeight = 200
+  ClientWidth = 430
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,8 +17,8 @@ object Form1: TForm1
   PixelsPerInch = 96
   TextHeight = 13
   object PageControl1: TPageControl
-    Left = 4
-    Top = 4
+    Left = -2
+    Top = 0
     Width = 434
     Height = 278
     ActivePage = TabSheet1
@@ -26,6 +26,7 @@ object Form1: TForm1
     OnChange = PageControl1Change
     object TabSheet1: TTabSheet
       Caption = #1054#1089#1085#1086#1074#1085#1086#1077
+      ExplicitLeft = 0
       object Label1: TLabel
         Left = 24
         Top = 16
@@ -42,10 +43,17 @@ object Form1: TForm1
       end
       object Label3: TLabel
         Left = 192
-        Top = 129
+        Top = 145
         Width = 36
         Height = 13
         Caption = #1057#1090#1072#1090#1091#1089
+      end
+      object Label5: TLabel
+        Left = 28
+        Top = 70
+        Width = 68
+        Height = 13
+        Caption = #1057#1086#1093#1088#1072#1085#1103#1090#1100' '#1074':'
       end
       object Edit1: TEdit
         Left = 102
@@ -54,20 +62,13 @@ object Form1: TForm1
         Height = 21
         TabOrder = 0
       end
-      object Edit2: TEdit
-        Left = 102
-        Top = 40
-        Width = 272
-        Height = 21
-        TabOrder = 1
-      end
       object Button1: TButton
         Left = 380
         Top = 13
         Width = 36
         Height = 21
         Caption = '...'
-        TabOrder = 2
+        TabOrder = 1
         OnClick = Button1Click
       end
       object Button2: TButton
@@ -76,17 +77,40 @@ object Form1: TForm1
         Width = 36
         Height = 21
         Caption = '...'
-        TabOrder = 3
+        TabOrder = 2
         OnClick = Button2Click
       end
       object Button3: TButton
-        Left = 13
-        Top = 90
+        Left = 18
+        Top = 106
         Width = 405
         Height = 25
         Caption = #1057#1086#1079#1076#1072#1090#1100
-        TabOrder = 4
+        TabOrder = 3
         OnClick = Button3Click
+      end
+      object Button6: TButton
+        Left = 380
+        Top = 67
+        Width = 36
+        Height = 21
+        Caption = '...'
+        TabOrder = 4
+        OnClick = Button6Click
+      end
+      object Edit2: TEdit
+        Left = 102
+        Top = 40
+        Width = 272
+        Height = 21
+        TabOrder = 5
+      end
+      object Edit5: TEdit
+        Left = 102
+        Top = 67
+        Width = 272
+        Height = 21
+        TabOrder = 6
       end
     end
     object TabSheet2: TTabSheet
@@ -1704,5 +1728,9 @@ object Form1: TForm1
   object OpenDialog2: TOpenDialog
     Left = 424
     Top = 280
+  end
+  object OpenDialog3: TOpenDialog
+    Left = 380
+    Top = 260
   end
 end

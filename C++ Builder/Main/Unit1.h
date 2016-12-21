@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------
 #ifndef Unit1H
 #define Unit1H
+#define NO_WIN32_LEAN_AND_MEAN
 //---------------------------------------------------------------------------
 #include <System.Classes.hpp>
 #include <Vcl.Controls.hpp>
@@ -10,6 +11,7 @@
 #include <Vcl.Dialogs.hpp>
 #include <Vcl.ExtCtrls.hpp>
 #include <Vcl.Graphics.hpp>
+#include <Vcl.FileCtrl.hpp>
 //---------------------------------------------------------------------------
 class TForm1 : public TForm
 {
@@ -20,7 +22,6 @@ __published:	// IDE-managed Components
 	TLabel *Label2;
 	TLabel *Label3;
 	TEdit *Edit1;
-	TEdit *Edit2;
 	TButton *Button1;
 	TButton *Button2;
 	TButton *Button3;
@@ -44,6 +45,11 @@ __published:	// IDE-managed Components
 	TButton *Button5;
 	TImage *Image1;
 	TLabel *Label4;
+	TButton *Button6;
+	TEdit *Edit2;
+	TEdit *Edit5;
+	TLabel *Label5;
+	TOpenDialog *OpenDialog3;
 	void __fastcall Button1Click(TObject *Sender);
 	void __fastcall Button2Click(TObject *Sender);
 	void __fastcall Button3Click(TObject *Sender);
@@ -56,6 +62,7 @@ __published:	// IDE-managed Components
 	void __fastcall FormCreate(TObject *Sender);
 	void __fastcall Button4Click(TObject *Sender);
 	void __fastcall Button5Click(TObject *Sender);
+	void __fastcall Button6Click(TObject *Sender);
 private:	// User declarations
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);
